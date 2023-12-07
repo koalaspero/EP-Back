@@ -9,5 +9,4 @@ class User(BaseModel):
     last_name: str
     is_active: bool
     role: int
-
-
+    

@@ -23,5 +23,16 @@ def create_user(user: User):
         "is_active" : user.is_active,
         "role": user.role
     }
-    print(new_user)
-    return "Usuario"
+
+    result = conn.execute(users.insert().values(new_user))
+
+    # Extract relevant data from the result
+    inserted_user_id = result.lastrowid
+    inserted_user = conn.execute(users.select().where(users.c.id == inserted_user_id)).first()
+
+    cookies = {
+        "id": inserted_user[0],
+        "user_name" : inserted_user[3]
+    }
+
+    return cookies
