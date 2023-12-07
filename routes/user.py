@@ -11,30 +11,24 @@ f = Fernet(key)
 
 user = APIRouter()
 
-def create_jwt_token(data: dict):
-    expiration = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
-    token_data = {"exp": expiration, **data}
-    token = jwt.encode(token_data, key, algorithm="HS256")
-    return token
-
-@user.post("/token", tags=["authentication"])
-def login_for_access_token(user_login):
-    db_user = conn.execute(users.select().where(users.c.username == user_login.username)).first()
-    if db_user and f.decrypt(db_user['password']).decode('utf-8') == user_login.password:
-        token_data = {"sub": str(db_user[0]), "username": db_user[3]}
-        access_token = create_jwt_token(token_data)
-        cookies = {
-            "id": db_user[0],
-            "user_name" : db_user[3],
-            "token" : access_token
-        }
-        return {"data": cookies}
-    else:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
 @user.get("/users", tags=["users"])
 def get_users():
-    return conn.execute(users.select()).fetchall()
+    result = conn.execute(users.select()).fetchall()
+
+    user_list = []
+    for row in result:
+        user_dict = {
+            "id": str(row[0]),
+            "name": row[1],
+            "last_name": row[2],
+            "username": row[3],
+            "password": row[4],
+            "is_active": row[5],
+            "role": row[6]
+        }
+        user_list.append(user_dict)
+
+    return {"data": user_list}
 
 @user.get("/users/{id}", tags=["users"])
 def get_user(id):
@@ -75,12 +69,12 @@ def create_user(user: User):
     inserted_user_id = result.lastrowid
     inserted_user = conn.execute(users.select().where(users.c.id == inserted_user_id)).first()
 
-    cookies = {
+    data = {
         "id": inserted_user[0],
         "user_name" : inserted_user[3]
     }
 
-    return cookies
+    return {"data" : data}
 
 @user.put("/users/{id}", tags=["users"])
 def update_user(id: int, updated_user: User):
