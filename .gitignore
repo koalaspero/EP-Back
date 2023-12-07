@@ -1,0 +1,43 @@
+# .gitignore for FastAPI with Python
+
+# Ignore virtual environment folder
+fast-env/
+
+# Ignore compiled Python files
+__pycache__/
+
+# Ignore local development settings
+.env
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore coverage files
+.coverage
+
+# Ignore generated HTML documentation
+docs/_build/
+
+# Ignore logs and databases
+*.log
+*.db
+
+# Ignore environment-specific files
+.envrc
+
+# Ignore system-specific files
+*.DS_Store
+
+# Ignore user-specific Python interpreter settings
+.idea/
+
+# Ignore pycache directory
+__pycache__/
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore the Python package index cache
+pip-wheel-metadata/
