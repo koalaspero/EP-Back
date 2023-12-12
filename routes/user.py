@@ -3,11 +3,14 @@ from fastapi import APIRouter, HTTPException
 from config.db import conn
 from models.user import users
 from schemas.user import User
+from schemas.user_login import User_Login
 from cryptography.fernet import Fernet
+from routes.authentication import get_password_hash
 import jwt
 
 key = Fernet.generate_key()
 f = Fernet(key)
+
 
 user = APIRouter()
 
@@ -35,6 +38,9 @@ def get_user(id):
 
     db_object = conn.execute(users.select().where(users.c.id == id)).first()
 
+    if db_object is None:
+        return {"error": "User not found"}  # or any appropriate response
+    
     user_dict = {
         "id": str(db_object[0]),  # Assuming id is a string
         "username": db_object[3],
@@ -58,7 +64,7 @@ def create_user(user: User):
         "name": user.name,
         "last_name": user.last_name,
         "username" : user.username,
-        "password" : f.encrypt(user.password.encode("utf-8")),
+        "password" : get_password_hash(user.password.encode("utf-8")),
         "is_active" : user.is_active,
         "role": user.role
     }
@@ -88,7 +94,7 @@ def update_user(id: int, updated_user: User):
         "name": updated_user.name,
         "last_name": updated_user.last_name,
         "username": updated_user.username,
-        "password": f.encrypt(updated_user.password.encode("utf-8")),
+        "password": get_password_hash(updated_user.password.encode("utf-8")),
         "is_active": updated_user.is_active,
         "role": updated_user.role
     }
