@@ -15,9 +15,6 @@ SECRET_KEY = "6b71ee1ca968759605d4211f17c375c5"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 2
 
-# key = Fernet.generate_key()
-# f = Fernet(key)
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -29,8 +26,10 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def get_user(username: str) -> Optional[User]:
-    db_object = conn.execute(users.select().where(users.c.username == username)).first()
+def get_user(user_login: User_Login) -> Optional[User]:
+    db_object = conn.execute(users.select().where(
+        (users.c.username == user_login.username) & (users.c.role == user_login.role)
+    )).first()
 
     if db_object is None:
         return None  # User not found
@@ -47,10 +46,11 @@ def get_user(username: str) -> Optional[User]:
 
     return user
 
-def authenticate_user(username: str, password: str):
-    user = get_user(username)
 
-    if user is None or not verify_password(password, user.password):
+def authenticate_user(user_login: User_Login):
+    user = get_user(user_login)
+
+    if user is None or not verify_password(user_login.password, user.password):
         return False
     
     return user
@@ -95,9 +95,9 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     
     return current_user
 
-@auth.post("/token", response_model=Token)
+@auth.post("/token", response_model=Token,  tags=["authentication"])
 async def login_for_access_token(user_login: User_Login):
-    user = authenticate_user(user_login.username, user_login.password)
+    user = authenticate_user(user_login)
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password", headers={"WWW-Authenticate" : "Bearer"})
@@ -105,13 +105,13 @@ async def login_for_access_token(user_login: User_Login):
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     access_token = create_access_token(data={"sub": user.username}, expires_delta= access_token_expires)
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "id": user.id, "username": user.username}
 
-@auth.get("/auth/me")
+@auth.get("/auth/me",  tags=["authentication"])
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
-@auth.get("/auth/me/items")
+@auth.get("/auth/me/items",  tags=["authentication"])
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"id": current_user.id, "username": current_user.username}]
     
