@@ -89,10 +89,10 @@ async def get_current_user(token: str = Depends(oauth_2_scheme)):
     return user
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-
+    
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    
+
     return current_user
 
 @auth.post("/token", response_model=Token,  tags=["authentication"])
@@ -115,38 +115,38 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"id": current_user.id, "username": current_user.username}]
     
-@auth.post("/auth/register",  tags=["authentication"])
-def register_user(user: User):
+# @auth.post("/auth/register",  tags=["authentication"])
+# def register_user(user: User):
 
-    # Check if the username already exists
-    existing_user = conn.execute(users.select().where(users.c.username == user.username)).first()
-    if existing_user:
-        return {"error": "Username already exists"}
+#     # Check if the username already exists
+#     existing_user = conn.execute(users.select().where(users.c.username == user.username)).first()
+#     if existing_user:
+#         return {"error": "Username already exists"}
 
-    new_user = {
-        "name": user.name,
-        "last_name": user.last_name,
-        "username" : user.username,
-        "password" : f.encrypt(user.password.encode("utf-8")),
-        "is_active" : user.is_active,
-        "role": user.role
-    }
+#     new_user = {
+#         "name": user.name,
+#         "last_name": user.last_name,
+#         "username" : user.username,
+#         "password" : f.encrypt(user.password.encode("utf-8")),
+#         "is_active" : user.is_active,
+#         "role": user.role
+#     }
 
-    result = conn.execute(users.insert().values(new_user))
+#     result = conn.execute(users.insert().values(new_user))
 
-    # Extract relevant data from the result
-    inserted_user_id = result.lastrowid
-    inserted_user = conn.execute(users.select().where(users.c.id == inserted_user_id)).first()
+#     # Extract relevant data from the result
+#     inserted_user_id = result.lastrowid
+#     inserted_user = conn.execute(users.select().where(users.c.id == inserted_user_id)).first()
 
-    # token_data = {"sub": str(inserted_user[0]), "username": inserted_user[3]}
-    # access_token = create_jwt_token(token_data)
+#     # token_data = {"sub": str(inserted_user[0]), "username": inserted_user[3]}
+#     # access_token = create_jwt_token(token_data)
     
-    cookies = {
-        "id": inserted_user[0],
-        "user_name" : inserted_user[3],
-        # "token" : access_token
-    }
+#     cookies = {
+#         "id": inserted_user[0],
+#         "user_name" : inserted_user[3],
+#         # "token" : access_token
+#     }
 
-    return {"data" : cookies}
+#     return {"data" : cookies}
 
 
