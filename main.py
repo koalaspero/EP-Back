@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from routes.user import user
+from routes.results import result
+from routes.medical_observation import medical_observation
 from routes.authentication import auth
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +10,8 @@ app = FastAPI(
 )
 
 app.include_router(user)
+app.include_router(result)
+app.include_router(medical_observation)
 app.include_router(auth)
 
 # Add CORS middleware to allow requests from all origins

@@ -1,5 +1,12 @@
 from sqlalchemy import Boolean, Integer, SmallInteger, String, Table,Column
-from config.db import meta, engine
+from sqlalchemy import create_engine, MetaData
+
+# from config.db import meta, engine
+
+engine = create_engine("mysql+pymysql://root:@localhost:3306/ep_db")
+
+meta = MetaData()
+
 
 users = Table("users", meta, 
               Column("id", Integer, primary_key= True), 
