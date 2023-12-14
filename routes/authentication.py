@@ -28,9 +28,9 @@ def get_password_hash(password):
 
 def get_user(user_login: User_Login) -> Optional[User]:
     db_object = conn.execute(users.select().where(
-        (users.c.username == user_login.username) & (users.c.role == user_login.role)
+        (users.c.username == user_login.username)
     )).first()
-
+    print(db_object)
     if db_object is None:
         return None  # User not found
     
@@ -41,9 +41,8 @@ def get_user(user_login: User_Login) -> Optional[User]:
         last_name=db_object[2],
         password=db_object[4],
         is_active=db_object[5],
-        role=db_object[6]
+        role=int(db_object[6]),
     )
-
     return user
 
 
@@ -98,13 +97,12 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 @auth.post("/token", response_model=Token,  tags=["authentication"])
 async def login_for_access_token(user_login: User_Login):
     user = authenticate_user(user_login)
-
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password", headers={"WWW-Authenticate" : "Bearer"})
     
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta= access_token_expires)
-
+    access_token = create_access_token(data={"sub": user.username,"rol":user.role}, expires_delta= access_token_expires)
+    print(access_token)
     return {"access_token": access_token, "token_type": "bearer", "id": user.id, "username": user.username}
 
 @auth.get("/auth/me",  tags=["authentication"])
