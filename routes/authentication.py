@@ -27,9 +27,11 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 def get_user(user_login: User_Login) -> Optional[User]:
+    
     db_object = conn.execute(users.select().where(
         (users.c.username == user_login.username)
     )).first()
+
     print(db_object)
     if db_object is None:
         return None  # User not found
@@ -101,8 +103,8 @@ async def login_for_access_token(user_login: User_Login):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password", headers={"WWW-Authenticate" : "Bearer"})
     
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    access_token = create_access_token(data={"sub": user.username,"rol":user.role}, expires_delta= access_token_expires)
-    print(access_token)
+    access_token = create_access_token(data={"username": user.username,"rol":user.role, "id": user.id}, expires_delta= access_token_expires)
+    # print(access_token)
     return {"access_token": access_token, "token_type": "bearer", "id": user.id, "username": user.username}
 
 @auth.get("/auth/me",  tags=["authentication"])
@@ -113,38 +115,30 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"id": current_user.id, "username": current_user.username}]
     
-# @auth.post("/auth/register",  tags=["authentication"])
-# def register_user(user: User):
+@auth.post("/auth/register",  tags=["authentication"])
+def register_user(user: dict):
 
-#     # Check if the username already exists
-#     existing_user = conn.execute(users.select().where(users.c.username == user.username)).first()
-#     if existing_user:
-#         return {"error": "Username already exists"}
+    print(user)
 
-#     new_user = {
-#         "name": user.name,
-#         "last_name": user.last_name,
-#         "username" : user.username,
-#         "password" : f.encrypt(user.password.encode("utf-8")),
-#         "is_active" : user.is_active,
-#         "role": user.role
-#     }
-
-#     result = conn.execute(users.insert().values(new_user))
-
-#     # Extract relevant data from the result
-#     inserted_user_id = result.lastrowid
-#     inserted_user = conn.execute(users.select().where(users.c.id == inserted_user_id)).first()
-
-#     # token_data = {"sub": str(inserted_user[0]), "username": inserted_user[3]}
-#     # access_token = create_jwt_token(token_data)
+    # Check if the username already exists
+    existing_user = conn.execute(users.select().where(users.c.username == user['username'])).first()
+    if existing_user:
+        return {"error": "Username already exists"}
     
-#     cookies = {
-#         "id": inserted_user[0],
-#         "user_name" : inserted_user[3],
-#         # "token" : access_token
-#     }
+    new_user = {
+        "name": user['name'],
+        "last_name": user['last_name'],
+        "username": user['username'],
+        "password": get_password_hash(user['password'].encode("utf-8")),
+        "is_active": user['is_active'],
+        "role": user['role'],
+    }
 
-#     return {"data" : cookies}
+    result = conn.execute(users.insert().values(new_user))
+    conn.commit()
 
+    access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    access_token = create_access_token(data={"username": new_user['username'],"rol":new_user['role'], "id": int(result.lastrowid)}, expires_delta= access_token_expires)
+    # print(access_token)
+    return {"access_token": access_token, "token_type": "bearer"}
 
