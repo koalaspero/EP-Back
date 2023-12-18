@@ -19,7 +19,7 @@ def get_results():
             "fecha": row[1],
             "hasParkinson": bool(row[2]),
             "resultext": row[3],
-            "result": row[4],
+            "source_file": row[4],
             "probability": row[5],
             "doctor": str(row[6]),
         }
@@ -41,7 +41,7 @@ def get_result(id):
             "fecha": db_object[1],
             "hasParkinson": bool(db_object[2]),
             "resultext": db_object[3],
-            "result": db_object[4],
+            "source_file": db_object[4],
             "probability": db_object[5],
             "doctor": str(db_object[6]),
         }
@@ -55,7 +55,7 @@ def create_result(res: dict):
         "fecha": res['fecha'],
         "hasParkinson": res['hasParkinson'],
         "resultext": res['resultext'],
-        "result": bytes(res['result'].values()),
+        "source_file": bytes(res['source_file'].values()),
         "probability": res['probability'],
         "doctor": res['doctor']
     }

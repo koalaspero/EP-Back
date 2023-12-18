@@ -7,6 +7,6 @@ class Result(BaseModel):
     fecha: Optional[str]
     hasParkinson: Optional[bool]
     resultext: Optional[str]
-    result: Optional[bytes]
+    source_file: Optional[bytes]
     probability: Optional[float]
     doctor: Optional[str]
