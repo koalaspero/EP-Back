@@ -41,12 +41,12 @@ def get_med(id):
 
 @medical_observation.post("/meds", tags=["Medical Observations"])
 def create_meds(med: dict):
-
+    
     new_ob = {
         "observationText": med['observationText'],
         "result": med['result'],
     }
 
     conn.execute(MedicalDB.insert().values(new_ob))
-
+    conn.commit()
     return {"state" : "Observacion añadida"}
