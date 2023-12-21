@@ -1,12 +1,18 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, status
-from config.db import conn
 from models.user import users
+from models.DBUser import DBUser
 from schemas.user import User
 from schemas.user_login import User_Login
 from cryptography.fernet import Fernet
 from routes.authentication import get_password_hash
 import jwt
+from config.db import (
+    SessionLocal,
+    Base,
+)
+
+# Define tu modelo de usuario (reemplaza esto con tu propio modelo)
 
 key = Fernet.generate_key()
 f = Fernet(key)
@@ -18,17 +24,16 @@ user = APIRouter()
 @user.put("/users", tags=["users"])
 def update_user(updated_user: User):
     # Check if the user with the specified ID exists
-    existing_user = conn.execute(
-        users.select().where(users.c.id == updated_user.id)
-    ).first()
+    db = SessionLocal()
+    existing_user = db.query(DBUser).filter(DBUser.id == updated_user.id).first()
 
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check if the username already exists for a different user
-    username_exists = conn.execute(
-        users.select().where(users.c.username == updated_user.username)
-    ).first()
+    username_exists = (
+        db.query(DBUser).filter(DBUser.username == updated_user.username).first()
+    )
 
     if username_exists and username_exists[0] != updated_user.id:
         raise HTTPException(
@@ -44,14 +49,10 @@ def update_user(updated_user: User):
     }
 
     # Perform the update
-    conn.execute(
-        users.update().where(users.c.id == updated_user.id).values(updated_data)
-    )
+    db.query(DBUser).filter(DBUser.id == updated_user.id).update(updated_data)
 
     # Retrieve and return the updated user
-    updated_user_data = conn.execute(
-        users.select().where(users.c.id == updated_user.id)
-    ).first()
+    updated_user_data = db.query(DBUser).filter(DBUser.id == updated_user.id).first()
 
     user_dict = {
         "id": str(updated_user_data[0]),
@@ -67,25 +68,39 @@ def update_user(updated_user: User):
 
 @user.get("/users", tags=["users"])
 def get_users():
-    result = conn.execute(users.select()).fetchall()
+    try:
+        # Inicia una sesión de base de datos
+        db = SessionLocal()
 
-    user_list = []
-    for row in result:
-        user_dict = {
-            "id": str(row[0]),
-            "name": row[1],
-            "last_name": row[2],
-            "username": row[3],
-            "role": row[6],
-        }
-        user_list.append(user_dict)
+        # Realiza la consulta de usuarios dentro de la sesión
+        users = db.query(DBUser).all()
 
-    return {"data": user_list}
+        # Transforma los resultados en un formato deseado
+        user_list = []
+        for user in users:
+            user_dict = {
+                "id": user.id,
+                "name": user.name,
+                "last_name": user.last_name,
+                "username": user.username,
+                "role": user.role,
+            }
+            user_list.append(user_dict)
+
+        # Cierra la sesión de base de datos
+        db.close()
+
+        return {"data": user_list}
+    except Exception as e:
+        # Si ocurre una excepción, realiza un rollback y maneja la excepción
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @user.get("/users/{id}", tags=["users"])
 def get_user(id):
-    db_object = conn.execute(users.select().where(users.c.id == id)).first()
+    db = SessionLocal()
+    db_object = db.query(DBUser).filter(DBUser.id == id).first()
 
     if db_object is None:
         return {"error": "User not found"}  # or any appropriate response
@@ -105,10 +120,8 @@ def get_user(id):
 @user.post("/users", tags=["users"])
 def create_user(user: User):
     print(user)
-    # Check if the username already exists
-    existing_user = conn.execute(
-        users.select().where(users.c.username == user.username)
-    ).first()
+    db = SessionLocal()
+    existing_user = db.query(DBUser).filter(DBUser.username == user.username).first()
     if existing_user:
         raise HTTPException(
             status_code=409,
@@ -122,12 +135,11 @@ def create_user(user: User):
         "is_active": user.is_active,
         "role": user.role,
     }
-
-    result = conn.execute(users.insert().values(new_user))
-    conn.commit()
+    result = db.execute(users.insert().values(new_user))
+    db.commit()
     # Extract relevant data from the result
     inserted_user_id = result.lastrowid
-    inserted_user = conn.execute(
+    inserted_user = db.execute(
         users.select().where(users.c.id == inserted_user_id)
     ).first()
 

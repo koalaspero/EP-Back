@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
+from fastapi import FastAPI, Form, Depends, UploadFile
+
 
 # Pydantic Model definition
 class Result(BaseModel):
@@ -7,6 +9,6 @@ class Result(BaseModel):
     fecha: Optional[str]
     hasParkinson: Optional[bool]
     resultext: Optional[str]
-    source_file: Optional[bytes]
+    source_file: UploadFile = Form(...)
     probability: Optional[float]
     doctor: Optional[str]
