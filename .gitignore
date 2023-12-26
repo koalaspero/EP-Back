@@ -9,6 +9,7 @@ __pycache__/
 # Ignore local development settings
 .env
 
+
 # Ignore Python bytecode files
 *.pyc
 *.pyo
@@ -35,6 +36,9 @@ docs/_build/
 
 # Ignore pycache directory
 __pycache__/
+
+#ignore static files
+static/
 
 # Ignore Jupyter notebook checkpoints
 .ipynb_checkpoints/
