@@ -13,7 +13,7 @@ Result = Table(
     Column('fecha', Date),
     Column('hasParkinson', SmallInteger),
     Column('resultext', Text),
-    Column('source_file', LargeBinary),  # Comma added here
+    Column('source_file', Text),  # Comma added here
     Column('probability', DECIMAL(10,2)),  # Comma added here
     Column('doctor', Integer, ForeignKey(users.c.id))
 )

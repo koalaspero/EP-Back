@@ -9,6 +9,6 @@ class Result(BaseModel):
     fecha: Optional[str]
     hasParkinson: Optional[bool]
     resultext: Optional[str]
-    source_file: UploadFile = Form(...)
+    source_file: Optional[str]
     probability: Optional[float]
     doctor: Optional[str]

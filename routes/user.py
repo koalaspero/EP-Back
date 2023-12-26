@@ -26,7 +26,7 @@ def update_user(updated_user: User):
     # Check if the user with the specified ID exists
     db = SessionLocal()
     existing_user = db.query(DBUser).filter(DBUser.id == updated_user.id).first()
-
+    print(existing_user)
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -35,7 +35,7 @@ def update_user(updated_user: User):
         db.query(DBUser).filter(DBUser.username == updated_user.username).first()
     )
 
-    if username_exists and username_exists[0] != updated_user.id:
+    if username_exists and username_exists.id != updated_user.id:
         raise HTTPException(
             status_code=409,
             detail="Username already exists",
@@ -53,15 +53,15 @@ def update_user(updated_user: User):
 
     # Retrieve and return the updated user
     updated_user_data = db.query(DBUser).filter(DBUser.id == updated_user.id).first()
-
     user_dict = {
-        "id": str(updated_user_data[0]),
-        "username": updated_user_data[3],
-        "name": updated_user_data[1],
-        "last_name": updated_user_data[2],
-        "is_active": updated_user_data[5],
-        "role": updated_user_data[6],
+        "id": str(updated_user_data.id),
+        "username": updated_user_data.username,
+        "name": updated_user_data.name,
+        "last_name": updated_user_data.last_name,
+        "is_active": updated_user_data.is_active,
+        "role": updated_user_data.role,
     }
+    db.commit()
 
     return {"data": user_dict}
 
