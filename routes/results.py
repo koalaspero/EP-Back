@@ -8,7 +8,7 @@ from config.db import (
     SessionLocal,
     Base,
 )
-import base64  # Importa la biblioteca base64
+import base64
 from dataclasses import dataclass
 from fastapi import FastAPI, Form, Depends, UploadFile
 from starlette.responses import HTMLResponse
@@ -93,7 +93,7 @@ def create_result(res: dict):
     result = db.execute(ResultTB.insert().values(new_res))
     # get the id of the inserted row
     inserted_id = result.lastrowid
-    name = res["fecha"] + "_" + str(inserted_id) + "."+res["extension"]
+    name = res["fecha"] + "_" + str(inserted_id) + "." + res["extension"]
 
     file_path = "static/" + doctor_name.username + "/"
     if not os.path.exists(file_path):
@@ -119,6 +119,34 @@ def create_result(res: dict):
         raise HTTPException(status_code=500, detail="Error retrieving the inserted ID")
 
 
+@result.post("/image", tags=["results"])
+def create_image(res: dict):
+    data = []
+    source_file_data = bytes(res["source_file"].values())
+    csv_bytes = BytesIO(source_file_data)
+    if res["extension"] == "svc":
+        with csv_bytes as file:
+            line = 0
+            csv_text = file.read().decode("utf-8")
+            csv_reader = csv.reader(csv_text.splitlines())
+            for row in csv_reader:
+                if line != 0:
+                    numeros = row[0].split(" ")
+                    data.append({"x": int(numeros[0]), "y": int(numeros[1])})
+                line = line + 1
+    else:
+        mat_file = loadmat(csv_bytes)
+        thePoints = mat_file["S"]["thePoints"][0][0]
+        x = thePoints[:, 0]
+        y = thePoints[:, 1]
+        mask = (x != 683) & (y != 384)
+        filtered_x = x[mask]
+        filtered_y = y[mask]
+        for x, y in zip(filtered_x, filtered_y):
+            data.append({"x": int(x), "y": int(y)})
+    return {"data": data}
+
+
 @result.post("/getResults", tags=["getResults"])
 def obtain_initial_results(res: dict):
     tsfresh_df = pd.DataFrame(
@@ -141,7 +169,6 @@ def obtain_initial_results(res: dict):
             for row in csv_reader:
                 if line != 0:
                     numeros = row[0].split(" ")
-                    print(numeros)
                     tsfresh_data_list.append(
                         {
                             "id": 1,
@@ -227,3 +254,7 @@ def obtain_initial_results(res: dict):
     probability = round(probability[0], 2)
     # get the result of the prediction
     return {"result": str(result[0]), "probability": str(probability)}
+
+
+# Periodo de trancision de varios años, el paciente tiene diversas circunstancias a lo que le lleva a otro medico , lo que genera más costos, deprecion ,corazon diferentes sintomas que hacen dificil diagnosticar
+# la enfermedad, escribiendo unas palabras los medicos pueden tener una idea acerca de lo que esta pasando(y puede tener un pre-diagnostico temprano).

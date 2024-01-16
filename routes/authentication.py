@@ -38,7 +38,6 @@ def get_user(user_login: User_Login) -> Optional[User]:
         users.select().where((users.c.username == user_login.username))
     ).first()
 
-    print(db_object)
     if db_object is None:
         return None  # User not found
 
@@ -145,7 +144,6 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 def register_user(user: dict):
     db = SessionLocal()
     print(user)
-
     # Check if the username already exists
     existing_user = db.execute(
         users.select().where(users.c.username == user["username"])
@@ -163,8 +161,10 @@ def register_user(user: dict):
     }
 
     result = db.execute(users.insert().values(new_user))
+    # get the id of the new user
     db.commit()
-
+    user_id = result.lastrowid
+    # print(access_token)
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     access_token = create_access_token(
         data={
@@ -174,5 +174,10 @@ def register_user(user: dict):
         },
         expires_delta=access_token_expires,
     )
-    # print(access_token)
-    return {"access_token": access_token, "token_type": "bearer"}
+    print(access_token)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "id": int(result.lastrowid),
+        "username": new_user["username"],
+    }

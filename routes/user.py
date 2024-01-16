@@ -26,7 +26,6 @@ def update_user(updated_user: User):
     # Check if the user with the specified ID exists
     db = SessionLocal()
     existing_user = db.query(DBUser).filter(DBUser.id == updated_user.id).first()
-    print(existing_user)
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -119,7 +118,6 @@ def get_user(id):
 
 @user.post("/users", tags=["users"])
 def create_user(user: User):
-    print(user)
     db = SessionLocal()
     existing_user = db.query(DBUser).filter(DBUser.username == user.username).first()
     if existing_user:
